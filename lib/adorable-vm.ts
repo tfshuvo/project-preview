@@ -144,7 +144,7 @@ export const createVmForRepo = async (
     if (isPnpm && devCmd.startsWith("npm run")) devCmd = devCmd.replace("npm run", "pnpm");
   }
 
-  const RUN_ENV = `export LC_ALL=C && export PATH=$PATH:/home/node/bin:${executionDir}/node_modules/.bin && export NODE_ENV=development && export HOST=0.0.0.0 && export PORT=${port} && export ASTRO_HOST=0.0.0.0 && export ASTRO_PORT=${port}`;
+  const RUN_ENV = `export LC_ALL=C && export PATH=$PATH:/home/node/bin:${WORKDIR_PATH}/node_modules/.bin && export NODE_ENV=development && export HOST=0.0.0.0 && export PORT=${port} && export VITE_HOST=0.0.0.0 && export VITE_PORT=${port} && export ASTRO_TELEMETRY_DISABLED=1`;
 
   console.log(`[VM] Framework: ${framework}, Port: ${port}, Execution Dir: ${executionDir}`);
   console.log(`[VM] Running installation: ${installCmd}`);
@@ -155,9 +155,22 @@ export const createVmForRepo = async (
   }
 
   console.log(`[VM] Starting dev server: ${devCmd}`);
+  const finalDevCmd = devCmd.includes("hugo") ? devCmd : `${devCmd} --host 0.0.0.0 --port ${port}`;
+
   void sandbox.process.executeCommand(
-    `cd ${executionDir} && ${RUN_ENV} && nohup ${devCmd} > /tmp/dev-server.log 2>&1 &`,
+    `cd ${executionDir} && ${RUN_ENV} && nohup ${finalDevCmd} > /tmp/dev-server.log 2>&1 &`,
   );
+
+  // Health check: Wait for port to be listening
+  console.log(`[VM] Waiting for port ${port} to be active...`);
+  for (let i = 0; i < 15; i++) {
+    const netstat = await sandbox.process.executeCommand("ss -tulpn | grep LISTEN").catch(() => ({ result: "" }));
+    if (netstat.result.includes(`:${port}`)) {
+      console.log(`[VM] Success! Port ${port} is active.`);
+      break;
+    }
+    await new Promise(resolve => setTimeout(resolve, 3000));
+  }
 
   const preview = await sandbox.getPreviewLink(port);
   console.log(`[VM] Preview URL: ${preview.url}`);

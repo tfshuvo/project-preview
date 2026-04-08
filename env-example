@@ -1,0 +1,18 @@
+# Default provider: OpenAI
+LLM_PROVIDER=
+OPENAI_API_KEY=
+
+# Optional: Claude provider support (swap provider without touching UI code)
+# LLM_PROVIDER=claude
+# ANTHROPIC_API_KEY=your-anthropic-api-key
+
+
+# Daytona SDK configuration
+DAYTONA_API_KEY=
+DAYTONA_API_URL=http://localhost:3000/api
+DAYTONA_TARGET=us
+DAYTONA_ORGANIZATION_ID=
+
+# MongoDB connection string
+MONGODB_URI=mongodb://127.0.0.1:27017/adorable
+GITHUB_TOKEN=
